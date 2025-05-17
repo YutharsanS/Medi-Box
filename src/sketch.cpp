@@ -35,9 +35,8 @@ void setup()
   // Setup mqtt
   setupMqtt();
 
-  // Initiate built in led
-  pinMode(LED_BUILTIN, OUTPUT); 
-  digitalWrite(LED_BUILTIN, HIGH);
+  // Intialize Servo
+  init_servo();
 
   delay(500);
   print_line("Welcome to Medibox!", 5, 15, 2);
@@ -47,6 +46,9 @@ void setup()
 
 void loop()
 {
+  // Control Servo
+  control_motor();
+
   // Get the temperature and humidity
   float *data = get_temperature_and_humidity();
   temperature = data[0];
@@ -59,10 +61,41 @@ void loop()
 
   mqttClient.loop(); // keeps the pub sub active
 
-  char tempStr[8];
-  dtostrf(temperature, 2, 2, tempStr);
-  mqttClient.publish("ENTC-TEMP", tempStr);
-  delay(1000);
+
+  unsigned long current_time = millis();
+
+    // sampling
+  if ((current_time - lastSampledTime) >= samplingInterval && sampleCount < maxSamples) {
+    samples[sampleCount] = analogRead(LDR_PIN);
+    sampleCount++;
+    lastSampledTime = current_time;
+  }
+
+  // averaging out
+  if ((current_time - lastAveragedTime) >= dataInterval && sampleCount > 0) {
+    long sum = 0;
+    for(int i = 0; i < sampleCount; i++){
+      sum += samples[i];
+    }
+
+    int average = sum / sampleCount;
+
+    // normalizing the average
+    float normalized = 1.0 - (average / 4095.0);
+
+    // Creating JSON payload
+    char payload[50];
+    snprintf(payload, sizeof(payload), "%.2f", normalized);
+    Serial.println(payload);
+    // Send to mqtt broker
+    mqttClient.publish("ENTC-LIGHT", payload);
+    // Calculate servo angle
+    calculate_servo_angle(normalized);
+
+    // resetting for the next batch 
+    lastAveragedTime = current_time;
+    sampleCount = 0;
+  }
 
   // put your main code here, to run repeatedly:
   update_time_with_check_alarm();
