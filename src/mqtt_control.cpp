@@ -50,7 +50,7 @@ void receiveCallback(char* topic, byte* payload, unsigned int length){
       controllingFactor = atof(payloadCharAr);
       Serial.print("New controlling factor: ");
       Serial.println(controllingFactor);
-    } else if (!(strcmp(topic, "ENTC-TEMP"))) {
+    } else if (!(strcmp(topic, "ENTC-TEMP1"))) {
       medicineTemperature = atoi(payloadCharAr);
       Serial.print("New medicine temperature: ");
       Serial.println(medicineTemperature);

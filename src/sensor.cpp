@@ -99,9 +99,7 @@ void calculate_servo_angle(float lightIntensity) {
   
   // Calculate raw angle
   float rawAngle = minimumAngle + ((180 - minimumAngle) * lightIntensity * controllingFactor * temperature / medicineTemperature);
-
-  Serial.println(rawAngle);
-  
+    
   // Ensure angle is within valid bounds
   motorAngle = (rawAngle < minimumAngle) ? minimumAngle : (rawAngle > 180) ? 180 : rawAngle;
 }
